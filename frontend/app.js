@@ -93,7 +93,8 @@ function renderJobs(payload) {
 }
 
 function renderQueue(payload) {
-  if (!payload.available) throw new Error(payload.error || "Queue data unavailable");
+  if (!payload.available)
+    throw new Error(payload.error || "Queue data unavailable");
   $("#queued-count").textContent = (payload.jobs || []).length;
 }
 
@@ -107,7 +108,8 @@ function renderScheduler(payload) {
   const predicted = payload.predicted_usage || {};
   $("#predicted-vram").textContent =
     predicted.vram_mb == null ? "--" : formatMb(predicted.vram_mb);
-  $("#graph-predicted").textContent = predicted.compute == null ? "--" : `${predicted.compute}%`;
+  $("#graph-predicted").textContent =
+    predicted.compute == null ? "--" : `${predicted.compute}%`;
   predictedHistory.push(Number(predicted.compute || 0));
   if (predictedHistory.length > 30) predictedHistory.shift();
   if (!decision) {
@@ -206,31 +208,70 @@ function showDisconnected(message = "Backend disconnected") {
 function showGpuUnavailable() {
   $("#experiment-status").textContent = "GPU telemetry unavailable";
   $("#gpu-name").textContent = "GPU telemetry unavailable";
-  ["gpu-util", "memory-util", "vram-used", "vram-total", "power", "temperature", "vram-percent", "vram-used-side", "vram-capacity", "graph-util"].forEach((id) => {
+  [
+    "gpu-util",
+    "memory-util",
+    "vram-used",
+    "vram-total",
+    "power",
+    "temperature",
+    "vram-percent",
+    "vram-used-side",
+    "vram-capacity",
+    "graph-util",
+  ].forEach((id) => {
     if ($(`#${id}`)) $(`#${id}`).textContent = "--";
   });
-  ["gpu-util-bar", "memory-util-bar", "vram-bar"].forEach((id) => { if ($(`#${id}`)) $(`#${id}`).style.width = "0%"; });
+  ["gpu-util-bar", "memory-util-bar", "vram-bar"].forEach((id) => {
+    if ($(`#${id}`)) $(`#${id}`).style.width = "0%";
+  });
 }
 
 function setBackendStatus(connected, running = false) {
-  $("#data-source").textContent = connected ? "Python backend / nvidia-smi" : "Backend disconnected";
-  $("#experiment-status").textContent = connected ? (running ? "Experiment running" : "Backend connected") : "Backend disconnected";
+  $("#data-source").textContent = connected
+    ? "Python backend / nvidia-smi"
+    : "Backend disconnected";
+  $("#experiment-status").textContent = connected
+    ? running
+      ? "Experiment running"
+      : "Backend connected"
+    : "Backend disconnected";
 }
 
 async function render() {
   const results = await Promise.allSettled([
-    api.health(), api.gpu(), api.jobs(), api.queue(), api.scheduler(), api.benchmark(), api.experiment(),
+    api.health(),
+    api.gpu(),
+    api.jobs(),
+    api.queue(),
+    api.scheduler(),
+    api.benchmark(),
+    api.experiment(),
   ]);
   const [health, gpu, jobs, queue, scheduler, benchmark, experiment] = results;
-  const backendConnected = health.status === "fulfilled" && health.value.ok === true;
-  setBackendStatus(backendConnected, experiment.status === "fulfilled" && experiment.value.running);
-  if (!backendConnected) { $("#last-sync").textContent = "--"; showDisconnected("Backend disconnected"); return; }
-  if (gpu.status === "fulfilled" && gpu.value.available) { renderGpu(gpu.value); $("#last-sync").textContent = new Date().toLocaleTimeString(); } else showGpuUnavailable();
+  const backendConnected =
+    health.status === "fulfilled" && health.value.ok === true;
+  setBackendStatus(
+    backendConnected,
+    experiment.status === "fulfilled" && experiment.value.running,
+  );
+  if (!backendConnected) {
+    $("#last-sync").textContent = "--";
+    showDisconnected("Backend disconnected");
+    return;
+  }
+  if (gpu.status === "fulfilled" && gpu.value.available) {
+    renderGpu(gpu.value);
+    $("#last-sync").textContent = new Date().toLocaleTimeString();
+  } else showGpuUnavailable();
   if (jobs.status === "fulfilled") renderJobs(jobs.value);
   if (queue.status === "fulfilled") renderQueue(queue.value);
   if (scheduler.status === "fulfilled") renderScheduler(scheduler.value);
   if (benchmark.status === "fulfilled") renderBenchmark(benchmark.value);
-  if (experiment.status === "fulfilled") $("#experiment-status").textContent = experiment.value.running ? "Experiment running" : "Backend connected";
+  if (experiment.status === "fulfilled")
+    $("#experiment-status").textContent = experiment.value.running
+      ? "Experiment running"
+      : "Backend connected";
   drawChart();
 }
 
