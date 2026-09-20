@@ -1,4 +1,5 @@
 import subprocess
+import sys
 import time
 
 
@@ -11,7 +12,7 @@ class JobManager:
         start_time = time.time()
 
         process = subprocess.Popen(
-            ["python", script]
+            [sys.executable, script]
         )
 
         self.processes[job_id] = {

@@ -1,0 +1,328 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>GPU Scheduler | Operations Console</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="topbar">
+        <div class="brand-block">
+          <div class="brand-mark">GS</div>
+          <div>
+            <p class="eyebrow">GPU OPERATIONS CONSOLE</p>
+            <h1>GPU Scheduler</h1>
+            <p class="subtitle">Resource-Aware GPU Workload Scheduling</p>
+          </div>
+        </div>
+        <div class="mode-control" aria-label="Scheduler mode">
+          <span class="control-label">CURRENT MODE</span>
+          <div class="segmented" role="group">
+            <button class="mode-button" data-mode="baseline">Baseline</button>
+            <button class="mode-button active" data-mode="smart">Smart</button>
+          </div>
+        </div>
+      </header>
+
+      <main>
+        <section class="status-strip" aria-label="Experiment status">
+          <div>
+            <span class="status-dot"></span
+            ><span id="experiment-status">Experiment ready</span>
+          </div>
+          <div class="strip-meta">
+            <span>DATA SOURCE</span
+            ><strong id="data-source">Backend disconnected</strong>
+          </div>
+          <div class="strip-meta">
+            <span>LAST SYNC</span><strong id="last-sync">--</strong>
+          </div>
+          <div class="strip-actions">
+            <button class="button button-primary" id="start-experiment">
+              <span class="button-icon">&#9654;</span> Start experiment
+            </button>
+            <button class="button button-quiet" id="stop-experiment">
+              <span class="button-icon">&#9632;</span> Stop
+            </button>
+            <button
+              class="icon-button"
+              id="reset-experiment"
+              title="Reset experiment"
+              aria-label="Reset experiment"
+            >
+              &#8635;
+            </button>
+          </div>
+        </section>
+
+        <section class="overview-grid">
+          <article class="panel gpu-identity">
+            <div class="panel-heading">
+              <div>
+                <p class="eyebrow">GPU OVERVIEW</p>
+                <h2 id="gpu-name">Waiting for AWS telemetry</h2>
+              </div>
+              <span class="live-tag"
+                ><span class="status-dot"></span> LIVE TELEMETRY</span
+              >
+            </div>
+            <div class="identity-meta">
+              <span>DEVICE 0</span><span>PCIe / CUDA</span
+              ><span id="gpu-driver">Driver data pending</span>
+            </div>
+            <div class="telemetry-grid">
+              <div class="metric">
+                <span>GPU utilization</span><strong id="gpu-util">--</strong
+                ><small>actual telemetry</small>
+                <div class="meter"><i id="gpu-util-bar"></i></div>
+              </div>
+              <div class="metric">
+                <span>Memory utilization</span
+                ><strong id="memory-util">--</strong
+                ><small>actual telemetry</small>
+                <div class="meter"><i id="memory-util-bar"></i></div>
+              </div>
+              <div class="metric">
+                <span>VRAM used</span><strong id="vram-used">--</strong
+                ><small id="vram-total">of --</small>
+                <div class="meter"><i id="vram-bar"></i></div>
+              </div>
+              <div class="metric">
+                <span>Power draw</span><strong id="power">--</strong
+                ><small>watts</small>
+              </div>
+              <div class="metric">
+                <span>Temperature</span><strong id="temperature">--</strong
+                ><small>celsius</small>
+              </div>
+            </div>
+          </article>
+          <article class="panel decision-panel">
+            <div class="panel-heading">
+              <div>
+                <p class="eyebrow">SCHEDULER DECISION</p>
+                <h2 id="decision-job">NO DECISION YET</h2>
+              </div>
+              <span class="decision-badge queue" id="decision-badge">--</span>
+            </div>
+            <div class="decision-equation">
+              <div>
+                <span>Current predicted compute</span
+                ><strong id="decision-current">--</strong>
+              </div>
+              <b>+</b>
+              <div>
+                <span>Incoming workload</span
+                ><strong id="decision-incoming">--</strong>
+              </div>
+              <b>=</b>
+              <div class="highlight">
+                <span>Predicted combined</span
+                ><strong id="decision-combined">--</strong>
+              </div>
+            </div>
+            <div class="limit-row">
+              <span>Configured compute limit</span
+              ><strong id="decision-limit">--</strong>
+            </div>
+            <p class="decision-reason" id="decision-reason">
+              Submit a workload to receive a live scheduler decision.
+            </p>
+          </article>
+        </section>
+
+        <section class="dashboard-grid">
+          <article class="panel graph-panel">
+            <div class="panel-heading">
+              <div>
+                <p class="eyebrow">LIVE GPU GRAPH</p>
+                <h2>Utilization history</h2>
+              </div>
+              <div class="legend">
+                <span><i class="legend-line cyan"></i>Actual GPU</span
+                ><span><i class="legend-line orange"></i>Predicted load</span>
+              </div>
+            </div>
+            <div class="chart-wrap">
+              <canvas
+                id="utilization-chart"
+                aria-label="GPU utilization history"
+              ></canvas>
+              <div class="chart-axis">
+                <span>60 sec ago</span><span>30 sec ago</span><span>now</span>
+              </div>
+            </div>
+            <div class="graph-footer">
+              <div>
+                <span class="legend-line cyan"></span
+                ><strong id="graph-util">--</strong
+                ><small>actual utilization</small>
+              </div>
+              <div>
+                <span class="legend-line orange"></span
+                ><strong id="graph-predicted">--</strong
+                ><small>admitted profiles</small>
+              </div>
+            </div>
+          </article>
+          <article class="panel vram-panel">
+            <div class="panel-heading">
+              <div>
+                <p class="eyebrow">MEMORY FOOTPRINT</p>
+                <h2>VRAM usage</h2>
+              </div>
+              <span class="neutral-tag">REAL-TIME</span>
+            </div>
+            <div class="vram-ring">
+              <div>
+                <strong id="vram-percent">--</strong><span>unavailable</span>
+              </div>
+            </div>
+            <div class="vram-stats">
+              <div>
+                <span>Telemetry used</span
+                ><strong id="vram-used-side">--</strong>
+              </div>
+              <div>
+                <span>Predicted profiles</span
+                ><strong id="predicted-vram">--</strong>
+              </div>
+              <div>
+                <span>Capacity</span><strong id="vram-capacity">--</strong>
+              </div>
+            </div>
+            <p class="data-note">
+              <span class="note-mark">i</span>Predicted resource usage is an
+              admission model. It is separate from actual GPU telemetry.
+            </p>
+          </article>
+        </section>
+
+        <section class="panel queue-panel">
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">WORKLOADS</p>
+              <h2>Job queue</h2>
+            </div>
+            <div class="queue-summary">
+              <span><b id="running-count">--</b> running</span
+              ><span><b id="queued-count">--</b> queued</span>
+            </div>
+          </div>
+          <div class="table-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th>Job</th>
+                  <th>Workload</th>
+                  <th>Status</th>
+                  <th>Predicted compute</th>
+                  <th>Predicted memory</th>
+                  <th>Predicted VRAM</th>
+                  <th>Runtime</th>
+                  <th>Wait time</th>
+                </tr>
+              </thead>
+              <tbody id="job-table"></tbody>
+            </table>
+          </div>
+        </section>
+
+        <section class="lower-grid">
+          <article class="panel running-panel">
+            <div class="panel-heading">
+              <div>
+                <p class="eyebrow">ACTIVE PROCESSES</p>
+                <h2>Running workloads</h2>
+              </div>
+              <span class="neutral-tag" id="slot-summary">WAITING FOR API</span>
+            </div>
+            <div id="running-list" class="running-list"></div>
+          </article>
+          <article class="panel comparison-panel">
+            <div class="panel-heading">
+              <div>
+                <p class="eyebrow">EXPERIMENT RESULTS</p>
+                <h2>Baseline vs Smart</h2>
+              </div>
+              <span class="neutral-tag">LIVE DATA LAYER</span>
+            </div>
+            <div id="comparison-grid" class="comparison-grid"></div>
+          </article>
+        </section>
+
+        <section class="panel timeline-panel">
+          <div class="panel-heading">
+            <div>
+              <p class="eyebrow">EXPERIMENT TIMELINE</p>
+              <h2>Execution comparison</h2>
+            </div>
+            <div class="timeline-legend">
+              <span><i class="timeline-swatch baseline"></i>Baseline</span
+              ><span><i class="timeline-swatch smart"></i>Smart</span>
+            </div>
+          </div>
+          <div id="timeline" class="timeline"></div>
+        </section>
+
+        <section class="bottom-grid">
+          <article class="panel controls-panel">
+            <div class="panel-heading">
+              <div>
+                <p class="eyebrow">EXPERIMENT CONTROLS</p>
+                <h2>Submit workload</h2>
+              </div>
+            </div>
+            <p class="control-copy">
+              Add a measured profile to the active scheduler mode.
+            </p>
+            <div class="submit-buttons">
+              <button class="workload-button low" data-workload="LOW">
+                <span>A</span>Submit LOW<small
+                  >23% compute / 133 MB</small
+                ></button
+              ><button class="workload-button medium" data-workload="MEDIUM">
+                <span>B</span>Submit MEDIUM<small
+                  >40% compute / 369 MB</small
+                ></button
+              ><button class="workload-button heavy" data-workload="HEAVY">
+                <span>C</span>Submit HEAVY<small>99% compute / 369 MB</small>
+              </button>
+            </div>
+          </article>
+          <article class="panel aws-panel">
+            <div class="panel-heading">
+              <div>
+                <p class="eyebrow">CLOUD INFRASTRUCTURE</p>
+                <h2>AWS instance</h2>
+              </div>
+              <span class="neutral-tag">STATUS UNKNOWN</span>
+            </div>
+            <div class="aws-grid">
+              <div><span>Provider</span><strong>AWS</strong></div>
+              <div><span>Instance</span><strong>g6.xlarge</strong></div>
+              <div><span>GPU</span><strong>NVIDIA L4</strong></div>
+              <div><span>GPU memory</span><strong>24 GB</strong></div>
+              <div><span>Region</span><strong>eu-north-1</strong></div>
+              <div>
+                <span>Instance status</span
+                ><strong class="muted">Awaiting backend</strong>
+              </div>
+            </div>
+            <p class="data-note">
+              <span class="note-mark">i</span>Instance state is not connected to
+              AWS telemetry. No running claim is made.
+            </p>
+          </article>
+        </section>
+      </main>
+      <footer>
+        <span>GPU Scheduler / Operations Console</span
+        ><span>Admission profiles: LOW / MEDIUM / HEAVY</span>
+      </footer>
+    </div>
+    <script src="app.js"></script>
+  </body>
+</html>
